@@ -132,10 +132,11 @@ module "cicd" {
   
   project_name             = var.project_name
   environment              = var.environment
-  aws_region              = var.aws_region
-  github_repo             = var.github_repo
+  aws_region               = var.aws_region
+  github_repo              = var.github_repo
   github_token_secret_name = var.github_token_secret_name
-  alert_email             = var.alert_email
+  alert_email              = var.alert_email
+  codestar_connection_arn  = var.codestar_connection_arn
 }
 
 # Upload Lambda deployment packages

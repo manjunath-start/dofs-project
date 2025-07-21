@@ -26,4 +26,9 @@ variable "github_token_secret_name" {
 variable "alert_email" {
   description = "Email address for pipeline alerts"
   type        = string
-} 
+}
+
+variable "codestar_connection_arn" {
+  description = "ARN of the CodeStar Connection for GitHub integration"
+  type        = string
+}

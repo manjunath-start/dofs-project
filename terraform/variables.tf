@@ -32,7 +32,7 @@ variable "github_repo" {
 variable "github_token_secret_name" {
   description = "Name of the AWS Secrets Manager secret containing GitHub token"
   type        = string
-  default     = "github-token"
+  default     = "github-token-1"
 }
 
 # Lambda configuration
@@ -72,4 +72,11 @@ variable "dlq_alarm_threshold" {
   description = "DLQ message count threshold for alerts"
   type        = number
   default     = 5
+}
+
+# CodeStar Connection configuration
+variable "codestar_connection_arn" {
+  description = "ARN of the CodeStar Connection"
+  type        = string
+  default     = "arn:aws:codeconnections:us-west-2:412381764327:connection/7d26847e-722d-4bdd-8701-26d7fc5956cb"
 }

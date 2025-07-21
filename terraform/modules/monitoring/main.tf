@@ -22,7 +22,7 @@ resource "aws_cloudwatch_metric_alarm" "dlq_messages" {
   alarm_actions       = [aws_sns_topic.alerts.arn]
 
   dimensions = {
-    QueueName = split("/", var.dlq_arn)[5]
+    QueueName = element(split(":", var.dlq_arn), 5)
   }
 }
 
@@ -61,8 +61,8 @@ resource "aws_cloudwatch_dashboard" "dofs_dashboard" {
 
         properties = {
           metrics = [
-            ["AWS/SQS", "ApproximateNumberOfMessages", "QueueName", split("/", var.dlq_arn)[5]],
-            ["AWS/SQS", "NumberOfMessagesSent", "QueueName", split("/", var.dlq_arn)[5]]
+            ["AWS/SQS", "ApproximateNumberOfMessages", "QueueName", element(split(":", var.dlq_arn), 5)],
+            ["AWS/SQS", "NumberOfMessagesSent", "QueueName", element(split(":", var.dlq_arn), 5)]
           ]
           view    = "timeSeries"
           stacked = false

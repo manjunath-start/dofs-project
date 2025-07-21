@@ -58,16 +58,16 @@ resource "aws_codepipeline" "main" {
     action {
       name             = "Source"
       category         = "Source"
-      owner            = "ThirdParty"
-      provider         = "GitHub"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
       version          = "1"
       output_artifacts = ["source_output"]
 
       configuration = {
-        Owner      = split("/", var.github_repo)[0]
-        Repo       = split("/", var.github_repo)[1]
-        Branch     = var.environment == "prod" ? "main" : "develop"
-        OAuthToken = data.aws_secretsmanager_secret_version.github_token.secret_string
+        ConnectionArn    = var.codestar_connection_arn
+        FullRepositoryId = var.github_repo
+        BranchName       = var.environment == "prod" ? "main" : "develop"
+        DetectChanges    = "true"
       }
     }
   }
@@ -152,15 +152,6 @@ resource "aws_codepipeline" "main" {
     Environment = var.environment
     Project     = var.project_name
   }
-}
-
-# GitHub Token Secret
-data "aws_secretsmanager_secret" "github_token" {
-  name = var.github_token_secret_name
-}
-
-data "aws_secretsmanager_secret_version" "github_token" {
-  secret_id = data.aws_secretsmanager_secret.github_token.id
 }
 
 # CloudWatch Event Rule for Pipeline Monitoring
