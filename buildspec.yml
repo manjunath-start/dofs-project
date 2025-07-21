@@ -1,0 +1,75 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - echo Installing dependencies
+      - pip install --upgrade pip
+      - pip install boto3 pytest moto requests
+      
+  pre_build:
+    commands:
+      - echo Pre-build phase started on `date`
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - echo Checking Python version
+      - python --version
+      - echo Current directory contents:
+      - ls -la
+      
+  build:
+    commands:
+      - echo Build phase started on `date`
+      - echo Installing Lambda dependencies...
+      
+      # Install dependencies for each Lambda function
+      - |
+        for lambda_dir in lambdas/*/; do
+          if [ -f "${lambda_dir}requirements.txt" ]; then
+            echo "Installing dependencies for ${lambda_dir}"
+            pip install -r "${lambda_dir}requirements.txt" -t "${lambda_dir}"
+          fi
+        done
+      
+      - echo Running Python tests...
+      # Add your test commands here when you have tests
+      # - python -m pytest tests/ -v
+      
+      - echo Packaging Lambda functions...
+      - mkdir -p artifacts
+      
+      # Package each Lambda function
+      - |
+        for lambda_dir in lambdas/*/; do
+          lambda_name=$(basename "$lambda_dir")
+          echo "Packaging $lambda_name"
+          cd "$lambda_dir"
+          zip -r "../../artifacts/${lambda_name}.zip" . -x "*.pyc" "*/__pycache__/*" "tests/*" "*.md"
+          cd ../..
+        done
+      
+      - echo Build completed on `date`
+      - ls -la artifacts/
+
+  post_build:
+    commands:
+      - echo Post-build phase started on `date`
+      - echo Uploading artifacts to S3...
+      
+      # Upload Lambda packages to S3
+      - |
+        if [ ! -z "$S3_BUCKET" ]; then
+          aws s3 cp artifacts/ s3://$S3_BUCKET/lambda-packages/$CODEBUILD_RESOLVED_SOURCE_VERSION/ --recursive
+        else
+          echo "S3_BUCKET not set, skipping upload"
+        fi
+      
+      - echo Post-build completed on `date`
+
+artifacts:
+  files:
+    - 'artifacts/**/*'
+    - 'terraform/**/*'
+  name: dofs-build-artifacts

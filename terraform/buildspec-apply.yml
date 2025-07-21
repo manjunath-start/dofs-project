@@ -1,0 +1,43 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - echo Installing Terraform...
+      - wget https://releases.hashicorp.com/terraform/1.6.6/terraform_1.6.6_linux_amd64.zip
+      - unzip terraform_1.6.6_linux_amd64.zip
+      - mv terraform /usr/local/bin/
+      - terraform --version
+      
+  pre_build:
+    commands:
+      - echo Pre-build phase started on `date`
+      - cd terraform
+      - echo Initializing Terraform...
+      - terraform init
+      
+  build:
+    commands:
+      - echo Build phase started on `date`
+      - echo Applying Terraform plan...
+      - |
+        if [ -f "tfplan" ]; then
+          echo "Applying existing plan..."
+          terraform apply -auto-approve tfplan
+        else
+          echo "No plan file found, running apply with auto-approve..."
+          terraform apply -auto-approve -var="environment=$TF_VAR_environment" -var="project_name=$TF_VAR_project_name" -var="aws_region=$TF_VAR_aws_region"
+        fi
+      
+  post_build:
+    commands:
+      - echo Post-build phase completed on `date`
+      - echo Terraform apply completed successfully
+      - terraform output -json > terraform-outputs.json || echo "No outputs defined"
+
+artifacts:
+  files:
+    - 'terraform/terraform-outputs.json'
+  name: terraform-apply-artifacts 
