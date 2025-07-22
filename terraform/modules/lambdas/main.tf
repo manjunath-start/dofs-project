@@ -32,12 +32,17 @@ data "aws_iam_policy_document" "lambda_policy" {
       "dynamodb:PutItem",
       "dynamodb:UpdateItem",
       "dynamodb:Query",
-      "dynamodb:Scan"
+      "dynamodb:Scan",
+      "dynamodb:BatchWriteItem",
+      "dynamodb:BatchGetItem",
+      "dynamodb:DescribeTable"
     ]
     
     resources = [
       "arn:aws:dynamodb:*:*:table/${var.orders_table_name}",
-      "arn:aws:dynamodb:*:*:table/${var.failed_orders_table_name}"
+      "arn:aws:dynamodb:*:*:table/${var.failed_orders_table_name}",
+      "arn:aws:dynamodb:*:*:table/${var.orders_table_name}/index/*",
+      "arn:aws:dynamodb:*:*:table/${var.failed_orders_table_name}/index/*"
     ]
   }
 
@@ -126,6 +131,12 @@ resource "aws_lambda_function" "validator" {
     }
   }
 
+  tags = {
+    Name        = "${var.project_name}-order-storage-${var.environment}"
+    Environment = var.environment
+    Region      = data.aws_region.current.name
+  }
+
   depends_on = [aws_iam_role_policy_attachment.lambda_basic_execution]
 }
 
@@ -146,6 +157,9 @@ resource "aws_lambda_function" "order_storage" {
       ORDERS_TABLE_NAME = var.orders_table_name
       ORDER_QUEUE_URL = var.order_queue_url
       ENVIRONMENT = var.environment
+      REGION = data.aws_region.current.name  # Changed from AWS_REGION
+      FAILED_ORDERS_TABLE_NAME = var.failed_orders_table_name
+      DEBUG_LOGGING = "true"
     }
   }
 

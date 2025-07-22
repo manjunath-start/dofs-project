@@ -4,7 +4,7 @@ terraform {
       key            = "dofs-project/terraform.tfstate"
       region         = "us-west-2"
       encrypt        = true
-      dynamodb_table = "terraform-state-locks"
+      use_lockfile   = true
   }
 }
 
@@ -42,6 +42,7 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
 }
 
 # DynamoDB table for Terraform state locking
+# NOTE: This table already exists in AWS and should not be managed by this Terraform configuration
 # resource "aws_dynamodb_table" "terraform_locks" {
 #   name           = "terraform-state-locks"
 #   billing_mode   = "PAY_PER_REQUEST"

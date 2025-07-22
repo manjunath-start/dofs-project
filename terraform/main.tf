@@ -98,8 +98,8 @@ module "stepfunctions" {
   project_name = var.project_name
   environment  = var.environment
 
-  validator_lambda_arn     = module.lambdas.validator_lambda_arn
-  order_storage_lambda_arn = module.lambdas.order_storage_lambda_arn
+  validator_lambda_arn     = module.lambdas.validator_lambda_function_arn
+  order_storage_lambda_arn = module.lambdas.order_storage_lambda_function_arn
   order_queue_url          = module.sqs.order_queue_url
 }
 

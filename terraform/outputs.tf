@@ -4,6 +4,16 @@ output "api_gateway_url" {
   value       = module.api_gateway.api_url
 }
 
+output "api_endpoint" {
+  description = "Complete API endpoint URL for orders"
+  value       = "${module.api_gateway.api_url}/order"
+}
+
+output "curl_example" {
+  description = "Example curl command to test the API"
+  value       = "curl -X POST ${module.api_gateway.api_url}/order -H 'Content-Type: application/json' -d '{\"order_id\":\"12345\",\"customer_name\":\"Test User\",\"items\":[{\"item\":\"Product A\",\"quantity\":1}],\"total_amount\":25.99}'"
+}
+
 output "api_gateway_stage" {
   description = "API Gateway stage"
   value       = module.api_gateway.stage_name
@@ -42,6 +52,11 @@ output "lambda_artifacts_bucket" {
 output "sns_topic_arn" {
   description = "SNS topic ARN for alerts"
   value       = module.monitoring.sns_topic_arn
+}
+
+output "aws_region" {
+  description = "AWS region where resources are deployed"
+  value       = data.aws_region.current.name
 }
 
 # Lambda function names for debugging

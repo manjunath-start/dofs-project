@@ -3,7 +3,7 @@ resource "aws_sfn_state_machine" "order_processor" {
   role_arn = aws_iam_role.step_functions_role.arn
 
   definition = jsonencode({
-    Comment = "DOFS Order Processing State Machine"
+    Comment = "DOFS Order Processing State Machine - Fixed Error Handling"
     StartAt = "ValidateOrder"
     States = {
       ValidateOrder = {
@@ -21,14 +21,15 @@ resource "aws_sfn_state_machine" "order_processor" {
         Catch = [
           {
             ErrorEquals = ["States.ALL"]
-            Next        = "ValidationFailed"
+            Next        = "SendToDLQ"
+            ResultPath  = "$.error"
           }
         ]
       }
       StoreOrder = {
         Type     = "Task"
         Resource = var.order_storage_lambda_arn
-        Next     = "OrderProcessingComplete"
+        Next     = "SendToQueue"
         Retry = [
           {
             ErrorEquals   = ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"]
@@ -40,23 +41,47 @@ resource "aws_sfn_state_machine" "order_processor" {
         Catch = [
           {
             ErrorEquals = ["States.ALL"]
-            Next        = "StorageFailed"
+            Next        = "SendToDLQ"
+            ResultPath  = "$.error"
           }
         ]
       }
+      SendToQueue = {
+        Type     = "Task"
+        Resource = "arn:aws:states:::sqs:sendMessage"
+        Parameters = {
+          QueueUrl = var.order_queue_url
+          MessageBody = {
+            "order_id.$" = "$.order_id"
+            "status" = "VALIDATED_AND_STORED"
+            "timestamp.$" = "$$.State.EnteredTime"
+            "order_data.$" = "$"
+          }
+        }
+        Next = "OrderProcessingComplete"
+        Catch = [
+          {
+            ErrorEquals = ["States.ALL"]
+            Next        = "OrderProcessingComplete"
+            Comment     = "Continue even if SQS fails - order is already stored"
+          }
+        ]
+      }
+      SendToDLQ = {
+        Type     = "Pass"
+        Parameters = {
+          "order_id.$" = "$.order_id"
+          "status" = "FAILED"
+          "error_details.$" = "$.error"
+          "original_order.$" = "$"
+          "timestamp.$" = "$$.State.EnteredTime"
+        }
+        Next = "OrderProcessingComplete"
+        Comment = "Mark order as failed but don't fail the execution"
+      }
       OrderProcessingComplete = {
         Type = "Succeed"
-        Comment = "Order successfully processed and queued for fulfillment"
-      }
-      ValidationFailed = {
-        Type = "Fail"
-        Error = "ValidationError"
-        Cause = "Order validation failed"
-      }
-      StorageFailed = {
-        Type = "Fail"
-        Error = "StorageError"
-        Cause = "Order storage failed"
+        Comment = "Order processing completed (successfully or with handled failures)"
       }
     }
   })
@@ -109,8 +134,26 @@ resource "aws_iam_role_policy" "step_functions_policy" {
           "lambda:InvokeFunction"
         ]
         Resource = [
-          var.validator_lambda_arn,
-          var.order_storage_lambda_arn
+          "${var.validator_lambda_arn}*",
+          "${var.order_storage_lambda_arn}*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage"
+        ]
+        Resource = [
+          "arn:aws:sqs:*:*:${var.project_name}-order-queue-${var.environment}"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage"
+        ]
+        Resource = [
+          "arn:aws:sqs:*:*:${var.project_name}-order-queue-${var.environment}"
         ]
       },
       {

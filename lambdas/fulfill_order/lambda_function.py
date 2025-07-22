@@ -118,8 +118,8 @@ def simulate_fulfillment(order_data):
     Returns success/failure with details
     """
     
-    # Simulate random fulfillment success/failure (90% success rate)
-    success_rate = 0.9
+    # Simulate random fulfillment success/failure (70% success rate)
+    success_rate = 0.7
     is_successful = random.random() < success_rate
     
     if is_successful:

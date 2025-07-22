@@ -39,3 +39,14 @@ output "fulfill_order_function_name" {
   description = "Fulfill Order Lambda function name"
   value       = aws_lambda_function.fulfill_order.function_name
 }
+
+# Direct Lambda ARNs for Step Functions (not API Gateway integration ARNs)
+output "validator_lambda_function_arn" {
+  description = "Validator Lambda function ARN (direct, not API Gateway)"
+  value       = aws_lambda_function.validator.arn
+}
+
+output "order_storage_lambda_function_arn" {
+  description = "Order Storage Lambda function ARN (direct, not API Gateway)"
+  value       = aws_lambda_function.order_storage.arn
+}
