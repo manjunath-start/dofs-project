@@ -9,7 +9,7 @@ terraform {
 }
 
 # S3 bucket for Terraform state (should be created separately)
-# This is commented out as it should be created before running main terraform
+# I suggest to commented out this as it should be created before running main terraform
 
 resource "aws_s3_bucket" "terraform_state" {
   bucket = "dofs-terraform-state-${random_string.state_suffix.result}"
@@ -42,7 +42,7 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
 }
 
 # DynamoDB table for Terraform state locking
-# NOTE: This table already exists in AWS and should not be managed by this Terraform configuration
+# NOTE: The DynamoDB state lock table is commented out because it already exists in AWS and managing it with Terraform would create a circular dependency where Terraform tries to manage the very resource it needs for its own state locking.
 # resource "aws_dynamodb_table" "terraform_locks" {
 #   name           = "terraform-state-locks"
 #   billing_mode   = "PAY_PER_REQUEST"
