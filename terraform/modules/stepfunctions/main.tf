@@ -68,17 +68,21 @@ resource "aws_sfn_state_machine" "order_processor" {
         ]
       }
       SendToDLQ = {
-        Type     = "Pass"
-        Parameters = {
-          "order_id.$" = "$.order_id"
-          "status" = "FAILED"
-          "error_details.$" = "$.error"
-          "original_order.$" = "$"
-          "timestamp.$" = "$$.State.EnteredTime"
-        }
-        Next = "OrderProcessingComplete"
-        Comment = "Mark order as failed but don't fail the execution"
-      }
+  Type     = "Task"
+  Resource = "arn:aws:states:::sqs:sendMessage"
+  Parameters = {
+          QueueUrl = var.dlq_url
+    MessageBody = {
+      "order_id.$" = "$.order_id"
+      "status" = "FAILED"
+      "error_details.$" = "$.error"
+      "original_order.$" = "$"
+      "timestamp.$" = "$$.State.EnteredTime"
+    }
+  }
+  Next = "OrderProcessingComplete"
+  Comment = "Send failed order to SQS DLQ"
+}
       OrderProcessingComplete = {
         Type = "Succeed"
         Comment = "Order processing completed (successfully or with handled failures)"
@@ -86,11 +90,12 @@ resource "aws_sfn_state_machine" "order_processor" {
     }
   })
 
-  logging_configuration {
-    log_destination        = "${aws_cloudwatch_log_group.step_functions.arn}:*"
-    include_execution_data = true
-    level                  = "ERROR"
-  }
+# Temporarily disable logging to resolve IAM issue
+  # logging_configuration {
+  #   log_destination        = "${aws_cloudwatch_log_group.step_functions.arn}:*"
+  #   include_execution_data = true
+  #   level                  = "ERROR"
+  # }
 
   tags = {
     Environment = var.environment
@@ -144,16 +149,8 @@ resource "aws_iam_role_policy" "step_functions_policy" {
           "sqs:SendMessage"
         ]
         Resource = [
-          "arn:aws:sqs:*:*:${var.project_name}-order-queue-${var.environment}"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "sqs:SendMessage"
-        ]
-        Resource = [
-          "arn:aws:sqs:*:*:${var.project_name}-order-queue-${var.environment}"
+          "arn:aws:sqs:*:*:${var.project_name}-order-queue-${var.environment}",
+          "arn:aws:sqs:*:*:${var.project_name}-order-dlq-${var.environment}"
         ]
       },
       {
@@ -166,7 +163,10 @@ resource "aws_iam_role_policy" "step_functions_policy" {
           "logs:ListLogDeliveries",
           "logs:PutResourcePolicy",
           "logs:DescribeResourcePolicies",
-          "logs:DescribeLogGroups"
+          "logs:DescribeLogGroups",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
         ]
         Resource = "*"
       }

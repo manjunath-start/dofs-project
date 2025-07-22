@@ -26,7 +26,7 @@ variable "alert_email" {
 variable "github_repo" {
   description = "GitHub repository for CI/CD"
   type        = string
-  default     = "your-org/dofs-project"
+  default     = "manjunath-start/dofs-project"
 }
 
 variable "github_token_secret_name" {

@@ -22,3 +22,8 @@ variable "order_queue_url" {
   description = "SQS order queue URL"
   type        = string
 }
+
+variable "dlq_url" {
+  description = "SQS dead letter queue URL"
+  type        = string
+}

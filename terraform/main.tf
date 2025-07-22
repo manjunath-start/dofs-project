@@ -101,6 +101,7 @@ module "stepfunctions" {
   validator_lambda_arn     = module.lambdas.validator_lambda_function_arn
   order_storage_lambda_arn = module.lambdas.order_storage_lambda_function_arn
   order_queue_url          = module.sqs.order_queue_url
+  dlq_url                  = module.sqs.dlq_url
 }
 
 # API Gateway Module
